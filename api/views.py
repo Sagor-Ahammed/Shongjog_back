@@ -34,6 +34,7 @@ class LikeListCreateAPIView(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    #one like for one user in one post
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
