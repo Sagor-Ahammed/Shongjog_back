@@ -1,6 +1,14 @@
 from django.urls import path
-from rest_framework.urlpatterns import format_suffix_patterns
-from .views import *
+from .views import (
+    PostListCreateAPIView,
+    PostRetrieveUpdateDestroyAPIView,
+    CommentListCreateAPIView,
+    CommentRetrieveUpdateDestroyAPIView,
+    LikeListCreateAPIView,
+    LikeRetrieveUpdateDestroyAPIView
+)
+
+app_name = 'api'
 
 urlpatterns = [
     path('posts/', PostListCreateAPIView.as_view(), name='post-list'),
@@ -10,5 +18,3 @@ urlpatterns = [
     path('likes/', LikeListCreateAPIView.as_view(), name='like-list'),
     path('likes/<int:pk>/', LikeRetrieveUpdateDestroyAPIView.as_view(), name='like-detail'),
 ]
-
-urlpatterns = format_suffix_patterns(urlpatterns)
