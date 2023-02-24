@@ -38,7 +38,7 @@ class RegisterAPI(generics.GenericAPIView):
         "token": AuthToken.objects.create(user)[1]
         })
 
-@method_decorator(login_required, name='dispatch')
+#@method_decorator(login_required, name='dispatch')
 class PostListCreateAPIView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -47,13 +47,13 @@ class PostListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-@method_decorator(login_required, name='dispatch')
+#@method_decorator(login_required, name='dispatch')
 class PostRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-@method_decorator(login_required, name='dispatch')
+#@method_decorator(login_required, name='dispatch')
 class CommentListCreateAPIView(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -62,13 +62,13 @@ class CommentListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-@method_decorator(login_required, name='dispatch')
+#@method_decorator(login_required, name='dispatch')
 class CommentRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-@method_decorator(login_required, name='dispatch')
+#@method_decorator(login_required, name='dispatch')
 class LikeListCreateAPIView(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
@@ -78,7 +78,7 @@ class LikeListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-@method_decorator(login_required, name='dispatch')
+#@method_decorator(login_required, name='dispatch')
 class LikeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
