@@ -1,7 +1,10 @@
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.views import APIView
+
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer
 from rest_framework import generics, permissions
@@ -85,3 +88,10 @@ class LikeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+
+class PostListByAuthorAPIView(APIView):
+    def get(self, request, author):
+        posts = Post.objects.filter(author__username=author)
+        serializer = PostSerializer(posts, many=True, context={'request': request})
+        return Response(serializer.data)
