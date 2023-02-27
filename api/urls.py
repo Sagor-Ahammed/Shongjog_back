@@ -6,13 +6,14 @@ from django.urls import path
 from knox import views as knox_views
 from .views import LoginAPI
 from django.urls import path
-from .views import PostListCreateAPIView, PostRetrieveUpdateDestroyAPIView, CommentListCreateAPIView, CommentRetrieveUpdateDestroyAPIView
+from .views import PostListCreateAPIView, PostRetrieveUpdateDestroyAPIView, CommentListCreateAPIView, CommentRetrieveUpdateDestroyAPIView,PostListByAuthorAPIView
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('posts/', PostListCreateAPIView.as_view(), name='post-list'),
     path('posts/<int:pk>/', PostRetrieveUpdateDestroyAPIView.as_view(), name='post-detail'),
+    path('posts/<str:author>/', PostListByAuthorAPIView.as_view(), name='post_list_by_author_api'),
     path('comments/', CommentListCreateAPIView.as_view(), name='comment-list'),
     path('comments/<int:pk>/', CommentRetrieveUpdateDestroyAPIView.as_view(), name='comment-detail'),
     path('likes/', LikeListCreateAPIView.as_view(), name='like-list'),
