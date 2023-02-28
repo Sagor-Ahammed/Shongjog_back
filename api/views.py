@@ -2,9 +2,9 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.views import APIView
-
+from django.contrib.auth.models import User
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer
 from rest_framework import generics, permissions
@@ -46,7 +46,7 @@ class RegisterAPI(generics.GenericAPIView):
 class PostListCreateAPIView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
     def perform_create(self, serializer):
@@ -90,8 +90,12 @@ class LikeRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 
-class PostListByAuthorAPIView(APIView):
-    def get(self, request, author):
-        posts = Post.objects.filter(author__username=author)
-        serializer = PostSerializer(posts, many=True, context={'request': request})
-        return Response(serializer.data)
+#@method_decorator(login_required, name='dispatch')
+class PostListByAuthorAPIView(generics.ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        author = self.kwargs['author']
+        user = User.objects.get(username=author)
+        return Post.objects.filter(author=user)
