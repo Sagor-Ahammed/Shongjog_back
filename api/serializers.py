@@ -41,6 +41,7 @@ class PostSerializer(serializers.ModelSerializer):
     likes = LikeSerializer(many=True, read_only=True)
     image = serializers.ImageField(max_length=None, use_url=True, required=False)
 
+
     class Meta:
         model = Post
         fields = ['id', 'author', 'text', 'image', 'created_at', 'comments', 'likes']
