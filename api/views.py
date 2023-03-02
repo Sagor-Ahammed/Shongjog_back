@@ -17,7 +17,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
-from knox.views import LoginView as KnoxLoginView
+from knox.views import LoginView as KnoxLoginView 
+
+
 
 class LoginAPI(KnoxLoginView):
     permission_classes = (permissions.AllowAny,)
