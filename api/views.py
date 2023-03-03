@@ -112,7 +112,7 @@ def like_list_create_api_view(request):
         return Response(serializer.data)
 
 
-@api_view(['POST'])
+@api_view(['PUT'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def like_retrieve_update_destroy_api_view(request, post_id):
     # Get the post object
@@ -121,16 +121,21 @@ def like_retrieve_update_destroy_api_view(request, post_id):
     except Post.DoesNotExist:
         return Response({"error": "Post not found."}, status=404)
 
-    # Create a new like object for the post and current user
-    like = Like.objects.create(post=post,user=request.user)
-
-    # Update the post's likes array with the new like object
-    post.likes.append(like)
-    post.save()
+    # Check if the user has already liked the post
+    try:
+        like = Like.objects.get(post=post, user=request.user)
+        # User has already liked the post, do nothing
+    except Like.DoesNotExist:
+        # User has not liked the post, create a new Like object for the user and post
+        like = Like.objects.create(post=post, user=request.user)
+        # Update the post's likes array with the new like object
+        post.likes.append(like)
+        post.save()
 
     # Serialize the post object and return it in the response
     serializer = PostSerializer(post)
     return Response(serializer.data, status=200)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
