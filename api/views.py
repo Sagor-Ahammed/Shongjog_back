@@ -18,6 +18,11 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView 
+from django.contrib import admin
+
+admin.site.site_header = "ShongJok"
+admin.site.site_title = "Shongjok"
+admin.site.index_title = "Welcome to Shongjuk"
 
 
 
