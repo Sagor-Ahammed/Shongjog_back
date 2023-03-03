@@ -39,7 +39,7 @@ class PostSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField()
     comments = CommentSerializer(many=True, read_only=True)
     likes = LikeSerializer(many=True, read_only=True)
-    image = serializers.ImageField(max_length=None, use_url=True, required=False)
+    image = serializers.ImageField(max_length=None, use_url=True, required=False,allow_null=True)
 
 
     class Meta:
