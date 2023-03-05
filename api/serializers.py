@@ -40,8 +40,9 @@ class PostSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
     likes = LikeSerializer(many=True, read_only=True)
     image = serializers.ImageField(max_length=None, use_url=True, required=False,allow_null=True)
+    video = serializers.FileField(max_length=None, use_url=True, required=False,allow_null=True)
 
 
     class Meta:
         model = Post
-        fields = ['id', 'author', 'text', 'image', 'created_at', 'comments', 'likes']
+        fields = ['id', 'author', 'text', 'image', 'video', 'created_at', 'comments', 'likes']
