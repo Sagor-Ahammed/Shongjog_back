@@ -14,6 +14,16 @@ from knox.models import AuthToken
 from django.contrib.auth.models import User
 from knox.views import LoginView as KnoxLoginView
 
+from knox.views import LoginView as KnoxLoginView 
+from django.contrib import admin
+
+admin.site.site_header = "ShongJok"
+admin.site.site_title = "Shongjok"
+admin.site.index_title = "Welcome to Shongjuk"
+
+
+
+
 
 class LoginAPI(KnoxLoginView):
     permission_classes = (permissions.AllowAny,)
