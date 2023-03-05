@@ -53,7 +53,7 @@ def post_list_create_api_view(request):
     if request.method == 'POST':
         serializer = PostSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(author=request.user, image=request.data.get('image', None))
+            serializer.save(author=request.user, image=request.data.get('image', None), video=request.data.get('video', None))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'GET':
@@ -160,3 +160,14 @@ def user_list(request):
     users = User.objects.all()
     serializer = UserSerializer(users, many=True)
     return JsonResponse(serializer.data, safe=False)
+
+
+from django.http import JsonResponse
+from .models import Post
+
+@api_view(['GET'])
+def posts_with_videos(request):
+    posts = Post.objects.exclude(video=None)
+    serializer = PostSerializer(posts, many=True)
+    return Response(serializer.data)
+
