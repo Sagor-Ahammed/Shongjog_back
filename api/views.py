@@ -5,14 +5,15 @@ from django.contrib.auth import login
 from rest_framework import status, generics, permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer, UserSerializer, RegisterSerializer
 from knox.models import AuthToken
 from django.contrib.auth.models import User
-from knox.views import LoginView as KnoxLoginView
+from django.http import JsonResponse
+
 
 from knox.views import LoginView as KnoxLoginView 
 from django.contrib import admin
@@ -22,7 +23,17 @@ admin.site.site_title = "Shongjok"
 admin.site.index_title = "Welcome to Shongjuk"
 
 
+class IsOwnerOrChangePostPermission(BasePermission):
+    """
+    Custom permission to allow post owner and users with change_post permission to modify comments and likes.
+    """
+    def has_object_permission(self, request, view, obj):
+        # Allow GET requests for all users
+        if request.method in SAFE_METHODS:
+            return True
 
+        # Allow modification only if user is the owner of the post or has the 'change_post' permission
+        return obj.post.author == request.user or request.user.has_perm('change_post', obj.post)
 
 
 class LoginAPI(KnoxLoginView):
@@ -47,6 +58,9 @@ class RegisterAPI(generics.GenericAPIView):
         "user": UserSerializer(user, context=self.get_serializer_context()).data,
         "token": AuthToken.objects.create(user)[1]
         })
+
+
+#posts
 @api_view(['POST', 'GET'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def post_list_create_api_view(request):
@@ -80,39 +94,59 @@ def post_detail_api_view(request, pk):
     return Response(status=status.HTTP_403_FORBIDDEN)
 
 
+#comments
+@api_view(['POST'])
+@permission_classes([IsAuthenticatedOrReadOnly, IsOwnerOrChangePostPermission])
+def create_comment_api_view(request, post_id):
+    try:
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        return Response({"error": "Post not found."}, status=404)
 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticatedOrReadOnly])
-def comment_list_create_api_view(request):
-    if request.method == 'GET':
-        comments = Comment.objects.all()
-        serializer = CommentSerializer(comments, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = CommentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(author=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = CommentSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(post=post, author=request.user)
+        post.comments.add(serializer.instance)
+        post.save()
+        return Response(serializer.data, status=201)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticatedOrReadOnly])
-def comment_detail_api_view(request, pk):
+@permission_classes([IsAuthenticatedOrReadOnly, IsOwnerOrChangePostPermission])
+def comment_detail_api_view(request, post_id, pk):
+    post = get_object_or_404(Post, pk=post_id)
     comment = get_object_or_404(Comment, pk=pk)
+
     if request.method == 'GET':
         serializer = CommentSerializer(comment)
         return Response(serializer.data)
-    elif request.method == 'PUT' and comment.author == request.user:
+    elif request.method == 'PUT':
         serializer = CommentSerializer(comment, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE' and comment.author == request.user:
+    elif request.method == 'DELETE':
+        if comment.author != request.user:
+            return Response({"error": "You do not have permission to delete this comment."}, status=403)
         comment.delete()
+        post.comments.remove(comment)
+        post.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    elif request.method == 'POST':
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            comment = serializer.save(author=request.user, post=post)
+            post.comments.append(comment)
+            post.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return Response(status=status.HTTP_403_FORBIDDEN)
 
+
+
+#likes
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def like_list_create_api_view(request):
@@ -122,30 +156,43 @@ def like_list_create_api_view(request):
         return Response(serializer.data)
 
 
-@api_view(['PUT'])
-@permission_classes([IsAuthenticatedOrReadOnly])
-def like_retrieve_update_destroy_api_view(request, post_id):
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated, IsOwnerOrChangePostPermission])
+def like_retrieve_update_destroy_api_view(request, pk):
     # Get the post object
     try:
-        post = Post.objects.get(id=post_id)
+        post = Post.objects.get(id=pk)
     except Post.DoesNotExist:
         return Response({"error": "Post not found."}, status=404)
 
     # Check if the user has already liked the post
     try:
         like = Like.objects.get(post=post, user=request.user)
-        # User has already liked the post, do nothing
+        if request.method == 'DELETE':
+            # User has already liked the post, delete the like object
+            like.delete()
+            # Remove the like object from the post's likes array
+           # post.likes.remove(like)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            # User has already liked the post, update the like object
+            serializer = LikeSerializer(like, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     except Like.DoesNotExist:
-        # User has not liked the post, create a new Like object for the user and post
-        like = Like.objects.create(post=post, user=request.user)
-        # Update the post's likes array with the new like object
-        post.likes.append(like)
-        post.save()
-
-    # Serialize the post object and return it in the response
-    serializer = PostSerializer(post)
-    return Response(serializer.data, status=200)
-
+        if request.method == 'POST':
+            # User has not liked the post, create a new Like object for the user and post
+            like = Like.objects.create(post=post, user=request.user)
+            # Update the post's likes array with the new like object
+            post.likes.add(like)
+            post.save()
+            serializer = LikeSerializer(like)
+            return Response(serializer.data, status=201)
+        else:
+            # User has not liked the post, cannot unlike
+            return Response({"error": "Cannot unlike. User has not liked the post."}, status=400)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -162,8 +209,7 @@ def user_list(request):
     return JsonResponse(serializer.data, safe=False)
 
 
-from django.http import JsonResponse
-from .models import Post
+
 
 @api_view(['GET'])
 def posts_with_videos(request):

@@ -37,8 +37,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField()
-    comments = CommentSerializer(many=True, read_only=True)
-    likes = LikeSerializer(many=True, read_only=True)
+    comments = CommentSerializer(many=True, read_only=True, allow_null=True)
+    likes = LikeSerializer(many=True, read_only=True, allow_null=True)
     image = serializers.ImageField(max_length=None, use_url=True, required=False,allow_null=True)
     video = serializers.FileField(max_length=None, use_url=True, required=False,allow_null=True)
 
