@@ -1,15 +1,18 @@
+from difflib import SequenceMatcher
+
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status, generics, permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Post, Comment, Like
-from .serializers import PostSerializer, CommentSerializer, LikeSerializer, UserSerializer, RegisterSerializer
+from .models import Post, Comment, Like, profile_picture
+from .serializers import PostSerializer, CommentSerializer, LikeSerializer, UserSerializer, RegisterSerializer, profile_pictureSerializer
 from knox.models import AuthToken
 from django.contrib.auth.models import User
 from django.http import JsonResponse
@@ -62,7 +65,7 @@ class RegisterAPI(generics.GenericAPIView):
 
 #posts
 @api_view(['POST', 'GET'])
-@permission_classes([IsAuthenticatedOrReadOnly])
+@permission_classes([IsAuthenticated])
 def post_list_create_api_view(request):
     if request.method == 'POST':
         serializer = PostSerializer(data=request.data)
@@ -217,3 +220,53 @@ def posts_with_videos(request):
     serializer = PostSerializer(posts, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def view_profile_picture(request):
+    pictures = profile_picture.objects.all()
+    serializer = profile_pictureSerializer(pictures, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST', 'PUT'])
+def profile_picture_up(request):
+    user = request.user
+    try:
+        instance = profile_picture.objects.get(user=user)
+    except profile_picture.DoesNotExist:
+        instance = None
+
+    if request.method == 'POST':
+        serializer = profile_pictureSerializer(data=request.data)
+        if serializer.is_valid():
+            if instance:
+                return Response({'message': 'Profile picture already exists. Use PUT method to update.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'PUT':
+        if not instance:
+            return Response({'message': 'Profile picture does not exist. Use POST method to create.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        serializer = profile_pictureSerializer(instance, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@csrf_exempt
+@api_view(['post'])
+def find_similar_users(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '')
+        users = User.objects.all()
+        similar_users = []
+        for user in users:
+            if user.username.lower() == name.lower():
+                similar_users.append(user.username)
+            elif SequenceMatcher(None, user.username.lower(), name.lower()).ratio() >= 0.5:
+                similar_users.append(user.username)
+        return JsonResponse({'similar_users': similar_users})
