@@ -44,3 +44,16 @@ class Like(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class profile_picture(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.image:
+            img = PIL.Image.open(self.image.path)
+            myHeight, myWidth = img.size
+            img = img.resize((myHeight, myWidth), PIL.Image.LANCZOS)
+            img.save(self.image.path)

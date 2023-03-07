@@ -26,6 +26,12 @@ urlpatterns = [
     path('logoutall/', knox_views.LogoutAllView.as_view(), name='logoutall'),
     path('users/', user_list, name='user-list'),
     path('videos/', posts_with_videos, name='video-list'),
+
+    path('dp/', view_profile_picture, name='display-picture'),
+    path('dp/update/', profile_picture_up, name='update-picture'),
+
+    path('search/', find_similar_users, name='find_similar_users'),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns = format_suffix_patterns(urlpatterns)
