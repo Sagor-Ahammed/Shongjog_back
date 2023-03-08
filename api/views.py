@@ -1,3 +1,4 @@
+import json
 from difflib import SequenceMatcher
 
 from django.http import JsonResponse
@@ -257,11 +258,12 @@ def profile_picture_up(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@csrf_exempt
+
 @api_view(['post'])
 def find_similar_users(request):
     if request.method == 'POST':
-        name = request.POST.get('name', '')
+        data = json.loads(request.body)
+        name = data.get('name', '')
         users = User.objects.all()
         similar_users = []
         for user in users:
