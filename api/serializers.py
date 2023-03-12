@@ -1,4 +1,3 @@
-from rest_framework import serializers
 from .models import Post, Comment, Like, profile_picture
 from rest_framework import serializers
 from django.contrib.auth.models import User
