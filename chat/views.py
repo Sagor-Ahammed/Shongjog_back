@@ -2,8 +2,6 @@
 
 from django.contrib.auth.models import User
 from django.db.models import Q
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from .models import Message
 from .serializers import MessageSerializer
 from rest_framework.decorators import api_view, permission_classes

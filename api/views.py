@@ -1,16 +1,12 @@
+import json
 from difflib import SequenceMatcher
-
-from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import login, authenticate
 from rest_framework import status, generics, permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, SAFE_METHODS, BasePermission
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Post, Comment, Like, profile_picture
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer, UserSerializer, RegisterSerializer, profile_pictureSerializer
 from knox.models import AuthToken
@@ -257,11 +253,12 @@ def profile_picture_up(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@csrf_exempt
+
 @api_view(['post'])
 def find_similar_users(request):
     if request.method == 'POST':
-        name = request.POST.get('name', '')
+        data = json.loads(request.body)
+        name = data.get('name', '')
         users = User.objects.all()
         similar_users = []
         for user in users:

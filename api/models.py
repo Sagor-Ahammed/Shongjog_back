@@ -10,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    text = models.TextField()
+    text = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to='post_images/', blank=True, null=True)
     video = models.FileField(upload_to='post_videos/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -22,6 +22,9 @@ class Post(models.Model):
             myHeight, myWidth = img.size
             img = img.resize((myHeight, myWidth), PIL.Image.LANCZOS)
             img.save(self.image.path)
+
+    def __str__(self):
+        return self.author.username + ':' + self.text
 
     def clean(self):
         super().clean()
@@ -39,11 +42,17 @@ class Comment(models.Model):
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.author.username + ':' + self.text
+
 
 class Like(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user.username
 
 
 class profile_picture(models.Model):
@@ -57,3 +66,6 @@ class profile_picture(models.Model):
             myHeight, myWidth = img.size
             img = img.resize((myHeight, myWidth), PIL.Image.LANCZOS)
             img.save(self.image.path)
+
+    def __str__(self):
+        return self.user.username
