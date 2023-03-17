@@ -7,6 +7,8 @@ from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, SAFE_METHODS, BasePermission
 from rest_framework.response import Response
+
+from notifications.models import Notification
 from .models import Post, Comment, Like, profile_picture
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer, UserSerializer, RegisterSerializer, profile_pictureSerializer
 from knox.models import AuthToken
@@ -107,6 +109,11 @@ def create_comment_api_view(request, post_id):
         serializer.save(post=post, author=request.user)
         post.comments.add(serializer.instance)
         post.save()
+        if request.user != post.author:
+            Notification.objects.create(
+                user=post.author,
+                notification=f"{request.user.username} commented on your post"
+            )
         return Response(serializer.data, status=201)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -188,6 +195,11 @@ def like_retrieve_update_destroy_api_view(request, pk):
             post.likes.add(like)
             post.save()
             serializer = LikeSerializer(like)
+            if request.user != post.author:
+                Notification.objects.create(
+                    user=post.author,
+                    notification=f"{request.user.username} loved your post"
+                )
             return Response(serializer.data, status=201)
         else:
             # User has not liked the post, cannot unlike
