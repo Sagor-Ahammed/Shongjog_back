@@ -61,5 +61,5 @@ def unfriend(request, recipient):
         friend.delete()
         friend = Friend.objects.filter(user=User.objects.get(username=recipient), friends=user)
         friend.delete()
-        return Response(status=201)
+        return Response(status=201) # return Response
 
