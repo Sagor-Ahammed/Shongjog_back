@@ -2,6 +2,8 @@
 
 from django.contrib.auth.models import User
 from django.db.models import Q
+
+from notifications.models import Notification
 from .models import Message
 from .serializers import MessageSerializer
 from rest_framework.decorators import api_view, permission_classes
@@ -20,6 +22,8 @@ def message_list(request, recipient):
         serializer = MessageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(sender=request.user, recipient=User.objects.get(username=recipient))
+            Notification.objects.create(user=User.objects.get(username=recipient),
+                                        notification=request.user.username+' sent you a message')
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
