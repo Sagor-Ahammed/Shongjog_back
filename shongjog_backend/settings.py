@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'knox',
     'corsheaders',
     'notifications.apps.NotificationsConfig',
+    'friend.apps.FriendConfig',
 
 ]
 
