@@ -51,3 +51,15 @@ def friend_request_list(request):
         friend_requests = FriendRequest.objects.filter(user=user)
         serializer = FriendRequestSerializer(friend_requests, many=True)
         return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unfriend(request, recipient):
+    if request.method == 'POST':
+        user = request.user
+        friend = Friend.objects.filter(user=user, friends=User.objects.get(username=recipient))
+        friend.delete()
+        friend = Friend.objects.filter(user=User.objects.get(username=recipient), friends=user)
+        friend.delete()
+        return Response(status=201)
+
